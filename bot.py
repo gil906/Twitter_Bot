@@ -15,13 +15,19 @@ api = tweepy.API(auth)
 def reply_to_mentions():
     mentions = api.mentions_timeline()
     for mention in mentions:
+        # Get the mention text in lowercase
+        mention_text = mention.text.lower()
+        
+        # Default reply message
+        reply_text = f"Thank you for reaching out, @{mention.user.screen_name}!"
+        
         # Customize the replies based on different triggers
-        if "hello" in mention.text.lower():
+        if "hello" in mention_text or "hi" in mention_text:
             reply_text = f"Hello @{mention.user.screen_name}! How can I assist you today?"
-        elif "help" in mention.text.lower():
+        elif "help" in mention_text or "support" in mention_text:
             reply_text = f"Sure, I'm here to help! Please let me know what you need assistance with."
-        else:
-            reply_text = f"Thank you for reaching out, @{mention.user.screen_name}!"
+        elif "thanks" in mention_text or "thank you" in mention_text:
+            reply_text = f"You're welcome, @{mention.user.screen_name}! If you have any more questions, feel free to ask."
         
         # Reply to the mention
         api.update_status(
@@ -32,4 +38,3 @@ def reply_to_mentions():
 
 # Run the bot
 reply_to_mentions()
-
