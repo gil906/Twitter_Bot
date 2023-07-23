@@ -14,6 +14,10 @@ api = tweepy.API(auth)
 # Define the function to handle mentions
 def reply_to_mentions():
     mentions = api.mentions_timeline()
+    
+    # Batch processing for mentions
+    mention_actions = []
+    
     for mention in mentions:
         # Get the mention text in lowercase
         mention_text = mention.text.lower()
@@ -29,27 +33,34 @@ def reply_to_mentions():
         elif "thanks" in mention_text or "thank you" in mention_text:
             reply_text = f"You're welcome, @{mention.user.screen_name}! If you have any more questions, feel free to ask."
         
-        # Reply to the mention
+        # Create actions for the mention
+        mention_actions.append({
+            'mention_id': mention.id,
+            'reply_text': reply_text,
+            'user_screen_name': mention.user.screen_name
+        })
+    
+    # Perform actions in a single API call
+    for action in mention_actions:
         try:
+            # Reply to the mention
             api.update_status(
-                status=reply_text,
-                in_reply_to_status_id=mention.id
+                status=action['reply_text'],
+                in_reply_to_status_id=action['mention_id']
             )
-            print(f"Replied to mention from @{mention.user.screen_name}")
+            print(f"Replied to mention from @{action['user_screen_name']}")
 
             # Retweet and like the mention
-            api.retweet(mention.id)
-            api.create_favorite(mention.id)
+            api.retweet(action['mention_id'])
+            api.create_favorite(action['mention_id'])
 
             # Follow the user who mentioned the bot
-            api.create_friendship(mention.user.screen_name)
-            print(f"Followed user: @{mention.user.screen_name}")
+            api.create_friendship(action['user_screen_name'])
+            print(f"Followed user: @{action['user_screen_name']}")
             
         except tweepy.TweepError as e:
             print(f"Error occurred: {e}")
             continue
 
-
 # Run the bot
 reply_to_mentions()
-          
