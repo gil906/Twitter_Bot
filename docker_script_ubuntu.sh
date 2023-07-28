@@ -19,3 +19,4 @@ sudo docker run -d --name twitter_bot_container twitter_bot_image
 # Clean up: Remove the cloned repository (optional, if you don't need the code on the server)
 cd ..
 rm -rf Twitter_Bot
+
