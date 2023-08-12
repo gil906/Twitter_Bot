@@ -52,22 +52,21 @@ def reply_to_mentions():
     try:
         # Bulk reply to mentions
         api.update_statuses(status=reply_data)
-        print(f"Replied to mentions")
-
-        # Get mention IDs for other actions
-        mention_ids = [action['mention_id'] for action in reply_actions]
-
-        # Bulk retweet and like
-        api.retweet(mention_ids)
-        api.create_favorite(mention_ids)
-
-        # Bulk follow
-        for user_screen_name in set(action['user_screen_name'] for action in reply_actions):
-            api.create_friendship(user_screen_name)
-            print(f"Followed user: @{user_screen_name}")
-
+        
+        # Additional features:
+        # 1. Like and retweet mentions
+        for mention in mentions:
+            api.create_favorite(mention.id)
+            api.retweet(mention.id)
+        
+        # 2. Follow users who mentioned
+        for mention in mentions:
+            api.create_friendship(mention.user.screen_name)
+        
+        print("Replied to and performed additional actions for mentions successfully.")
+    
     except tweepy.TweepError as e:
-        print(f"Error occurred: {e}")
+        print("Error: ", e)
 
-# Run the bot
+# Call the function to handle mentions and perform actions
 reply_to_mentions()
