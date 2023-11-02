@@ -1,8 +1,12 @@
 import tweepy
-import logging
+from loguru import logger
+from dotenv import load_dotenv
 import os
 
-# Load API credentials and reply triggers from environment variables or a configuration file
+###
+load_dotenv()  # Load environment variables from a .env file.
+
+# Load API credentials and reply triggers from environment variables
 consumer_key = os.getenv("TWITTER_CONSUMER_KEY")
 consumer_secret = os.getenv("TWITTER_CONSUMER_SECRET")
 access_token = os.getenv("TWITTER_ACCESS_TOKEN")
@@ -12,9 +16,6 @@ reply_triggers = {
     "hello": "Hello @{mention.user.screen_name}! How can I assist you today?",
     # Add more triggers and responses as needed
 }
-
-# Set up logging
-logging.basicConfig(filename="twitter_bot.log", level=logging.INFO)
 
 # Create the API object
 def create_api():
@@ -48,10 +49,10 @@ def handle_mentions(api):
             api.retweet(mention.id)
             api.create_friendship(mention.user.screen_name)
 
-            logging.info(f"Replied to @{mention.user.screen_name}: {mention.text}")
+            logger.info(f"Replied to @{mention.user.screen_name}: {mention.text}")
 
     except tweepy.TweepError as e:
-        logging.error(f"Error: {e}")
+        logger.error(f"Error: {e}")
         print("Error: ", e)
 
 def main():
