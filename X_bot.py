@@ -1,72 +1,63 @@
 import tweepy
+from loguru import logger
+from dotenv import load_dotenv
+import os
 
-# Twitter API credentials
-consumer_key = "YOUR_CONSUMER_KEY"
-consumer_secret = "YOUR_CONSUMER_SECRET"
-access_token = "YOUR_ACCESS_TOKEN"
-access_token_secret = "YOUR_ACCESS_TOKEN_SECRET"
+###
+load_dotenv()  # Load environment variables from a .env file.
 
-# Create the API object
-auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
-auth.set_access_token(access_token, access_token_secret)
-api = tweepy.API(auth)
+# Load API credentials and reply triggers from environment variables
+consumer_key = os.getenv("TWITTER_CONSUMER_KEY")
+consumer_secret = os.getenv("TWITTER_CONSUMER_SECRET")
+access_token = os.getenv("TWITTER_ACCESS_TOKEN")
+access_token_secret = os.getenv("TWITTER_ACCESS_TOKEN_SECRET")
 
-# Define reply triggers and messages
 reply_triggers = {
     "hello": "Hello @{mention.user.screen_name}! How can I assist you today?",
-    "hi": "Hello @{mention.user.screen_name}! How can I assist you today?",
-    "help": "Sure, I'm here to help! Please let me know what you need assistance with.",
-    "support": "Sure, I'm here to help! Please let me know what you need assistance with.",
-    "thanks": "You're welcome, @{mention.user.screen_name}! If you have any more questions, feel free to ask.",
-    "thank you": "You're welcome, @{mention.user.screen_name}! If you have any more questions, feel free to ask."
+    # Add more triggers and responses as needed
 }
 
-# Define the function to handle mentions
-def reply_to_mentions():
-    mentions = api.mentions_timeline()
-    
-    # Prepare reply actions
-    reply_actions = []
-    
-    for mention in mentions:
-        mention_text = mention.text.lower()
-        reply_text = f"Thank you for reaching out, @{mention.user.screen_name}!"
-        
-        for trigger, response in reply_triggers.items():
-            if trigger in mention_text:
-                reply_text = response
-                break
-        
-        reply_actions.append({
-            'mention_id': mention.id,
-            'reply_text': reply_text,
-            'user_screen_name': mention.user.screen_name
-        })
-    
-    # Prepare bulk reply data
-    reply_data = {
-        action['mention_id']: action['reply_text'] for action in reply_actions
-    }
-    
-    # Perform bulk actions
+# Create the API object
+def create_api():
+    auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
+    auth.set_access_token(access_token, access_token_secret)
+    api = tweepy.API(auth)
+    return api
+
+# Handle mentions and perform actions
+def handle_mentions(api):
     try:
-        # Bulk reply to mentions
-        api.update_statuses(status=reply_data)
-        
-        # Additional features:
-        # 1. Like and retweet mentions
+        mentions = api.mentions_timeline()
+
         for mention in mentions:
+            mention_text = mention.text.lower()
+            reply_text = f"Thank you for reaching out, @{mention.user.screen_name}!"
+
+            for trigger, response in reply_triggers.items():
+                if trigger in mention_text:
+                    reply_text = response
+                    break
+
+            # Reply to mention
+            api.update_status(
+                status=reply_text,
+                in_reply_to_status_id=mention.id,
+            )
+
+            # Additional actions
             api.create_favorite(mention.id)
             api.retweet(mention.id)
-        
-        # 2. Follow users who mentioned
-        for mention in mentions:
             api.create_friendship(mention.user.screen_name)
-        
-        print("Replied to and performed additional actions for mentions successfully.")
-    
+
+            logger.info(f"Replied to @{mention.user.screen_name}: {mention.text}")
+
     except tweepy.TweepError as e:
+        logger.error(f"Error: {e}")
         print("Error: ", e)
 
+def main():
+    api = create_api()
+    handle_mentions(api)
+
 if __name__ == "__main__":
-    reply_to_mentions()
+    main()
